@@ -37,7 +37,9 @@ config.session.store = session_store;
 var session = express_session(config.session);
 
 //Finally start configuring the app itself
-var game_manager = new GameManager(config, socketio, session_store);
-web(express_app, session);
+var game_manager = new GameManager(config, socket_server, session_store);
+web(config.web, express_app, session, game_manager);
 
-http.listen(config.server.ip, config.server.port);
+http_server.listen(config.server.port, config.server.ip, 511, function() {
+    console.log("Listening on " + config.server.port);
+});
