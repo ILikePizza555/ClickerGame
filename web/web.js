@@ -19,7 +19,10 @@ function configWebRoutes(app, game_manager) {
     });
     
     app.get("/game/:id", function route_game(req, res) {
-        
+        if(!game_manager.exists(req.params.id)) {
+            res.status(400).send("Game does not exist!");
+            return;
+        }
         
         res.render("game", {title: "Click Buddies"});
     });
@@ -51,10 +54,21 @@ function configApiRoutes(app, game_manager) {
         
         res.redirect(302, "/game/" + game_id);
     });
+    
+    app.get("/logout", function route_logout(req, res) {
+        req.session.destroy(function(err) {
+            if(err) {
+                res.status(500).send(err);
+                return;
+            }
+            
+            res.status(200).send();
+        });
+    });
 }
 
 module.exports = function buildApp(config, app, session, game_manager) {
     configApp(app, config, session);
-    configWebRoutes(app);
+    configWebRoutes(app, game_manager);
     configApiRoutes(app, game_manager);
 }
