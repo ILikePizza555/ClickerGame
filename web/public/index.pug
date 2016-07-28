@@ -1,6 +1,9 @@
-doctype html
-html
-    head
-    body
-        h1 Hello World!
-    
+extends ./base.pug
+
+block content
+    h1 Click Buddies
+    form(action="/join_game" method="post" enctype='application/json')
+        label(for="username") Username: 
+        input#username(type="text" name="username")
+        p 
+        button(type="submit") New Game

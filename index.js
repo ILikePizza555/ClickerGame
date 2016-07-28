@@ -1,7 +1,7 @@
 var config = {
     server: {
         ip: process.env.IP,
-        port: process.env.PORT
+        port: 6379
     },
     web: {
         view_dir: "./web/public",
@@ -13,10 +13,14 @@ var config = {
     redis_store: {
         host: process.env.IP,
         port: 6379
+    },
+    game: {
+        max_players_game: 1000
     }
 };
 
 /* IMPORTS */
+require("./utils");
 const express = require("express");
 const http = require("http");
 const socketio = require("socket.io");
@@ -37,7 +41,7 @@ config.session.store = session_store;
 var session = express_session(config.session);
 
 //Finally start configuring the app itself
-var game_manager = new GameManager(config, socket_server, session_store);
+var game_manager = new GameManager(config.game, socket_server, session_store);
 web(config.web, express_app, session, game_manager);
 
 http_server.listen(config.server.port, config.server.ip, 511, function() {
