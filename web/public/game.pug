@@ -1,0 +1,11 @@
+extends ./base.pug
+
+block head
+    script(src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous")
+    script(src="/socket.io/socket.io.js")
+    script(src="/static/game.js")
+    
+block content
+    h1 Clicks: #[span#counter 0]
+    button#clicker Click Me!
+        

@@ -13,12 +13,14 @@ function configApp(app, config, session) {
     return app;
 }
 
-function configWebRoutes(app) {
+function configWebRoutes(app, game_manager) {
     app.get("/", function route_index(req, res) {
         res.render("index", {title: "Click Buddies"});
     });
     
     app.get("/game/:id", function route_game(req, res) {
+        
+        
         res.render("game", {title: "Click Buddies"});
     });
 }
@@ -32,8 +34,9 @@ function configApiRoutes(app, game_manager) {
         }
         
         //Check if already in a game
-        if(req.session.user && req.session.user.game_id) {
+        if(req.session.user && req.session.user.game_id >= 0) {
             res.redirect(302, "/game/" + req.session.user.game_id);
+            return;
         }
         
         console.log("New user: " + req.body.username);

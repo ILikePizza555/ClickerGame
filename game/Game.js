@@ -10,7 +10,7 @@ function Game(max_players, id, socket_server) {
         this.id = id; //Session id
         
         players.push(this);
-    }
+    };
     
     //Configure socket
     game_socket(socket_server.of("/" + id), this);
@@ -20,6 +20,6 @@ Game.prototype = {
     isFull: function() {
         return this.players.length >= this.max_players;
     }
-}
+};
 
 module.exports = Game;

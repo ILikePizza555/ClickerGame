@@ -1,14 +1,19 @@
 var config = {
     server: {
         ip: process.env.IP,
-        port: 6379
+        port: process.env.PORT
     },
     web: {
         view_dir: "./web/public",
         static_dir: "./web/static"
     },
     session: {
-        secret: "keyboard cat"
+        secret: "keyboard cat",
+        resave: true,
+        saveUninitialized: true,
+        cookie: {
+            maxAge: 6000000
+        }
     },
     redis_store: {
         host: process.env.IP,
@@ -24,7 +29,7 @@ require("./utils");
 const express = require("express");
 const http = require("http");
 const socketio = require("socket.io");
-const express_session = require("express-session")
+const express_session = require("express-session");
 const RedisStore = require("connect-redis")(express_session);
 
 const web = require("./web/web");

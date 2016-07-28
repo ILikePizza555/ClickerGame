@@ -31,6 +31,9 @@ function GameManager(config, socket_server, session_store) {
 GameManager.prototype = {
     getGameById: function(id) {
         return games[id];
+    },
+    exists: function(game_id) {
+        return !!games[game_id];
     }
 }
 
