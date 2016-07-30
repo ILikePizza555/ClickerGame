@@ -12,7 +12,8 @@ var config = {
         resave: true,
         saveUninitialized: true,
         cookie: {
-            maxAge: 6000000
+            maxAge: 6000000,
+            httpOnly: false
         }
     },
     redis_store: {
@@ -46,7 +47,7 @@ config.session.store = session_store;
 var session = express_session(config.session);
 
 //Finally start configuring the app itself
-var game_manager = new GameManager(config.game, socket_server, session_store);
+var game_manager = new GameManager(config.game, socket_server, session);
 web(config.web, express_app, session, game_manager);
 
 http_server.listen(config.server.port, config.server.ip, 511, function() {

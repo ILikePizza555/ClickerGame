@@ -44,7 +44,7 @@ function configApiRoutes(app, game_manager) {
         
         console.log("New user: " + req.body.username);
         
-        var game_id = game_manager.join_game(req.sessionID);
+        var game_id = game_manager.join_game(req.sessionID, req.body.username);
         
         //Create a user object in the session
         req.session.user = {
