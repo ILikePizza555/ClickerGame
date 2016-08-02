@@ -43,32 +43,52 @@ var game = {
     }
 };
 
-
 //Clicker class, in charge of handling the clicker, updating the server, and displaying clicks
 function Clicker() {
     //Data
-    this.local_clicks = 0;
+    this.clicks = 0; //Total clicks, including those by the global clickrate
+    this.click_delta = 0; //Number of clicks since last update
+    
+    this.local_clickrate = 0;
+    this.global_clickrate = 0;
     
     //UI
     this.label_counter = $("#label-click-counter");
     this.btn_clicker = $("#btn-click");
+    this.label_cps = $("#label-cps");
     
     //Set the callbacks
     this.btn_clicker.click(this.btn_clicker_handler.bind(this));
     
     game.client_update_callbacks.push(this.update_client.bind(this));
+    game.server_update_callbacks.push(this.update_server.bind(this));
     game.ui_update_callbacks.push(this.update_ui.bind(this));
+    
+    socket.on("click update", this.click_update_handler.bind(this));
 }
 
 Clicker.prototype = {
     btn_clicker_handler: function(e) {
-        this.local_clicks += 1;
+        this.clicks += 1;
+        this.click_delta += 1;
+    },
+    click_update_handler: function(d) {
+        console.log("s: " + d.clicks + " c: " + this.clicks);
+        
+        this.clicks = d.clicks;
+        this.global_clickrate = d.clickrate;
     },
     update_client: function() {
-        
+        this.clicks += this.global_clickrate * (config.client_update_rate / 1000);
+    },
+    update_server: function() {
+        socket.emit("click update", this.click_delta);
+        this.local_clickrate = this.click_delta / config.server_update_rate;
+        this.click_delta = 0;
     },
     update_ui: function() {
-        this.label_counter.text(this.local_clicks);
+        this.label_counter.text(Math.round(this.clicks));
+        this.label_cps.text(Math.roundTo(this.global_clickrate, 2));
     }
 };
 

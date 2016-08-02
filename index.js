@@ -21,7 +21,9 @@ var config = {
         port: 6379
     },
     game: {
-        max_players_game: 1000
+        max_players: 1000,
+        max_clickrate: 10,
+        update_rate: 3000
     }
 };
 

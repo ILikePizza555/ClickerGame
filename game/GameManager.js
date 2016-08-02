@@ -13,7 +13,7 @@ function GameManager(config, socket_server, session) {
     this.join_game = function(player_id, player_name) {
         if(games.length === 0 || games.last().isFull()) {
             //Game is full, make a new one
-            var new_game = new Game(config.max_players_game, games.length, socket_server, session);
+            var new_game = new Game(config, games.length, socket_server.of("/" + games.length), session);
             //Add our player to it
             new new_game.Player(player_id, player_name);
             //Add it to storage
@@ -22,7 +22,7 @@ function GameManager(config, socket_server, session) {
             return new_game.id;
         } else {
             //Not full
-            var game = game.last();
+            var game = games.last();
             new game.Player(player_id, player_name);
             return game.id;
         }

@@ -1,8 +1,6 @@
 /**
  * This module returns a function that sets up the socket server for the provided game.
  */
-const body_parser = require("body-parser");
-
 module.exports = function configSocket(socket_server, game, session) {
     socket_server.use(function middleware_session(socket, next) {
         session(socket.handshake, {}, next);
@@ -22,6 +20,12 @@ module.exports = function configSocket(socket_server, game, session) {
     });
     
     socket_server.on("connection", function(socket) {
-        console.log("Connection!");
+        socket.on("click update", function click_update_handler(click_delta) {
+            if(typeof click_delta !== "number") {
+                return;
+            }
+            
+            socket.player.update_clicker_data(click_delta);
+        });
     });
-}
+};
