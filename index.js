@@ -41,9 +41,9 @@ var express_app = express(); //Add routes later
 var http_server = http.Server(express_app);
 var socket_server = socketio(http_server);
 
-//Initalize the session and session store here, and pass to the modules, since both express and socket.io need them.
 var session_store = new RedisStore(config.redis_store);
 config.session.store = session_store;
+//Initialize the session middleware here, since both express and socket.io need them
 var session = express_session(config.session);
 
 //Finally start configuring the app itself

@@ -1,6 +1,8 @@
 /* global io */
 /* global $ */
 
+"use strict";
+
 /* Utilities */
 Array.prototype.last = function() {
     return this[this.length - 1];
@@ -10,64 +12,68 @@ Math.roundTo = function(number, digits) {
     return parseFloat(number.toFixed(digits));
 };
 
+function invoke_callback(func, i, a) {
+    func();
+}
+
+// Variables
 var config = {
     server_update_rate: 3000,
     client_update_rate: 16
 };
 
-/* Classes */
-function ClickComponent(game) {
-    this.ref_game = game;
-    
-    //Data
-    this.clicks = 0;
-    
-    this.local_click_rate = 0;
-    this.last_click_time = 0;
-    
-    this.global_click_rate = 0;
-    
-    //UI
-    this.button_clicker = $("#btn-click");
-    this.label_clicks = $("#label-click-counter");
-    
-    this.button_clicker.click(this.button_click_handler.bind(this));
-}
+var id = window.location.pathname.split("/").last();
+var socket = io("/" + id);
 
-ClickComponent.prototype = {
-    button_click_handler: function() {
-        this.clicks += 1;
-        
-        var now = Date.now();
-        this.local_click_rate = 1 / (now - this.last_click_time);
-        this.last_click_time = now;
-    },
+var game = {
+    server_update_callbacks: [],
+    client_update_callbacks: [],
+    ui_update_callbacks: [],
     
     update_server: function() {
-        
+        this.server_update_callbacks.forEach(invoke_callback);
     },
-    
     update_client: function() {
-        
+        this.client_update_callbacks.forEach(invoke_callback);
+        window.requestAnimationFrame(this.ui_update_callbacks.forEach.bind(this.ui_update_callbacks, invoke_callback));
     },
-    
-    update_ui: function() {
-        
+    start: function() {
+        this.s_update_interval = setInterval(this.update_server.bind(this), config.server_update_rate);
+        this.c_update_interval = setInterval(this.update_client.bind(this), config.client_update_rate);
     }
 };
 
-function Game() {
-    this.id = window.location.pathname.split("/").last();
-    this.socket = io("/" + this.id);
+
+//Clicker class, in charge of handling the clicker, updating the server, and displaying clicks
+function Clicker() {
+    //Data
+    this.local_clicks = 0;
     
-    var components = {};
+    //UI
+    this.label_counter = $("#label-click-counter");
+    this.btn_clicker = $("#btn-click");
     
-    for (var i = 0; i < arguments.length; i = i + 1) {
-        var Component = arguments[i];
-        components[Component.name] = new Component(this);
-    }
+    //Set the callbacks
+    this.btn_clicker.click(this.btn_clicker_handler.bind(this));
+    
+    game.client_update_callbacks.push(this.update_client.bind(this));
+    game.ui_update_callbacks.push(this.update_ui.bind(this));
 }
 
+Clicker.prototype = {
+    btn_clicker_handler: function(e) {
+        this.local_clicks += 1;
+    },
+    update_client: function() {
+        
+    },
+    update_ui: function() {
+        this.label_counter.text(this.local_clicks);
+    }
+};
+
 $(document).ready(function entry() {
-    var game = new Game(ClickComponent);
+    var clicker = new Clicker();
+    
+    game.start();
 });

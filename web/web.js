@@ -50,7 +50,7 @@ function configApiRoutes(app, game_manager) {
         req.session.user = {
             name: req.body.username,
             game_id: game_id
-        }
+        };
         
         res.redirect(302, "/game/" + game_id);
     });
@@ -71,4 +71,4 @@ module.exports = function buildApp(config, app, session, game_manager) {
     configApp(app, config, session);
     configWebRoutes(app, game_manager);
     configApiRoutes(app, game_manager);
-}
+};
