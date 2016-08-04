@@ -1,5 +1,7 @@
 var game_socket = require("./GameSocket");
 
+//Factory function that returns a player class.
+//I use this instead of outright inner class in Game to clean up the code a little
 function factory_playerclass(game, config) {
     function Player(sid, name) {
         this.sid = sid; //Session id

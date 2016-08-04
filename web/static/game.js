@@ -73,17 +73,18 @@ Clicker.prototype = {
         this.click_delta += 1;
     },
     click_update_handler: function(d) {
-        console.log("s: " + d.clicks + " c: " + this.clicks);
+        console.log("s: " + d.clicks + " c: " + this.clicks + " d: " + (d.clicks - this.clicks));
+        console.log("sr: " + d.clickrate + " cr: " + this.local_clickrate + " dr: " + (d.clickrate - this.local_clickrate));
         
         this.clicks = d.clicks;
         this.global_clickrate = d.clickrate;
     },
     update_client: function() {
-        this.clicks += this.global_clickrate * (config.client_update_rate / 1000);
+        this.clicks += (this.global_clickrate * (config.client_update_rate / 1000)) - (this.local_clickrate * (config.client_update_rate / 1000));
     },
     update_server: function() {
         socket.emit("click update", this.click_delta);
-        this.local_clickrate = this.click_delta / config.server_update_rate;
+        this.local_clickrate = this.click_delta / (config.server_update_rate / 1000);
         this.click_delta = 0;
     },
     update_ui: function() {
