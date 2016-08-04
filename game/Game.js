@@ -75,7 +75,7 @@ Game.prototype = {
     update: function() {
         this.update_clicker_data();
         
-        this.socket_server.emit("click update", {clicks: this.clicks, clickrate: this.clickrate});
+        this.socket_server.emit("sync click", {clicks: this.clicks, clickrate: this.clickrate});
     },
     getPlayerByPID: function(pid) {
         return this.players[pid];
@@ -87,6 +87,23 @@ Game.prototype = {
             if(this.players[i].sid === sid) {return this.players[i];}
         }
         return null;
+    },
+    generate_sync_data: function() {
+        //Build the player data
+        var player_data = [];
+        for(var i = 0; i < this.players.length; i++) {
+            player_data.push({
+                name: this.players[i].name,
+                clicks: this.players[i].clicker_data.clicks_total
+            });
+        }
+        
+        return {
+            player_count: this.players.length,
+            players: player_data,
+            clicks: this.clicks,
+            clickrate: this.clickrate
+        };
     }
 };
 

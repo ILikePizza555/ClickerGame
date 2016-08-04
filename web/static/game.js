@@ -29,6 +29,7 @@ var game = {
     server_update_callbacks: [],
     client_update_callbacks: [],
     ui_update_callbacks: [],
+    sync_handlers: [],
     
     update_server: function() {
         this.server_update_callbacks.forEach(invoke_callback);
@@ -64,7 +65,8 @@ function Clicker() {
     game.server_update_callbacks.push(this.update_server.bind(this));
     game.ui_update_callbacks.push(this.update_ui.bind(this));
     
-    socket.on("click update", this.click_update_handler.bind(this));
+    socket.on("sync click", this.sync_handler.bind(this));
+    socket.on("sync full", this.sync_handler.bind(this));
 }
 
 Clicker.prototype = {
@@ -72,7 +74,7 @@ Clicker.prototype = {
         this.clicks += 1;
         this.click_delta += 1;
     },
-    click_update_handler: function(d) {
+    sync_handler: function(d) {
         console.log("s: " + d.clicks + " c: " + this.clicks + " d: " + (d.clicks - this.clicks));
         console.log("sr: " + d.clickrate + " cr: " + this.local_clickrate + " dr: " + (d.clickrate - this.local_clickrate));
         
@@ -80,7 +82,9 @@ Clicker.prototype = {
         this.global_clickrate = d.clickrate;
     },
     update_client: function() {
-        this.clicks += (this.global_clickrate * (config.client_update_rate / 1000)) - (this.local_clickrate * (config.client_update_rate / 1000));
+        //Client-side interpolation for clicks
+        //Doesn't really handle changes in click rates very well, but most people playing clickers usually click at max rate.
+        this.clicks += (this.global_clickrate - this.local_clickrate) * (config.client_update_rate / 1000);
     },
     update_server: function() {
         socket.emit("click update", this.click_delta);
@@ -97,4 +101,5 @@ $(document).ready(function entry() {
     var clicker = new Clicker();
     
     game.start();
+    socket.emit("req sync full");
 });

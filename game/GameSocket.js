@@ -20,12 +20,21 @@ module.exports = function configSocket(socket_server, game, session) {
     });
     
     socket_server.on("connection", function(socket) {
+        //Click update, called every few seconds
         socket.on("click update", function click_update_handler(click_delta) {
             if(typeof click_delta !== "number") {
                 return;
             }
             
+            //TODO: ignore frequent requests
             socket.player.update_clicker_data(click_delta);
+        });
+        
+        socket.on("req sync full", function sync_request_handler() {
+            //TODO: ignore frequent requests
+            var sync_packet = game.generate_sync_data();
+            
+            socket.emit("sync full", sync_packet);
         });
     });
 };
