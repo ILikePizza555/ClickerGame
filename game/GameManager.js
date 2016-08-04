@@ -10,12 +10,12 @@ var games = [];
 
 function GameManager(config, socket_server, session) {
     
-    this.join_game = function(player_id, player_name) {
+    this.join_game = function(player_sid, player_name) {
         if(games.length === 0 || games.last().isFull()) {
             //Game is full, make a new one
             var new_game = new Game(config, games.length, socket_server.of("/" + games.length), session);
             //Add our player to it
-            new new_game.Player(player_id, player_name);
+            new new_game.Player(player_sid, player_name);
             //Add it to storage
             games.push(new_game);
             
@@ -23,10 +23,10 @@ function GameManager(config, socket_server, session) {
         } else {
             //Not full
             var game = games.last();
-            new game.Player(player_id, player_name);
+            new game.Player(player_sid, player_name);
             return game.id;
         }
-    }
+    };
 }
 
 GameManager.prototype = {
@@ -35,7 +35,11 @@ GameManager.prototype = {
     },
     exists: function(game_id) {
         return !!games[game_id];
+    },
+    validate: function(game_id, sid) {
+        if(!games[game_id]) { return false; }
+        return !!games[game_id].getPlayerBySID(sid);
     }
-}
+};
 
 module.exports = GameManager;

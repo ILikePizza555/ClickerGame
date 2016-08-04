@@ -14,12 +14,14 @@ module.exports = function configSocket(socket_server, game, session) {
             return;
         }
         
-        player.name = socket.handshake.session.user.name;
+        player.name = socket.handshake.session.player.name;
         socket.player = player;
         next();
     });
     
     socket_server.on("connection", function(socket) {
+        socket.broadcast.emit("player join", socket.player.generate_sync_data());
+        
         //Click update, called every few seconds
         socket.on("click update", function click_update_handler(click_delta) {
             if(typeof click_delta !== "number") {
@@ -36,5 +38,10 @@ module.exports = function configSocket(socket_server, game, session) {
             
             socket.emit("sync full", sync_packet);
         });
+        
+        socket.on("disconnect", function disconnect_handler() {
+            socket.player.disconnect();
+            socket.broadcast.emit("player disconnect", socket.player.pid);
+        })
     });
 };

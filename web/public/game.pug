@@ -8,10 +8,13 @@ block head
     script(src="/static/game.js")
     
 block content
-    .block.center
+    header.block.center
         .block.center(style="flex-direction:column; text-align:center;")
             h1 Clicks: #[span#label-click-counter 0]
             div Global Click Rate: #[span#label-cps 0]
-    .block.center
+    #btn-container.center
         button#btn-click Click Me!
+    #sidebars
+        #player-box
+            header #[h2 Players #[span#label-player-count 0]]
         

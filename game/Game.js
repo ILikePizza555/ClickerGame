@@ -3,7 +3,7 @@ var game_socket = require("./GameSocket");
 //Factory function that returns a player class.
 //I use this instead of outright inner class in Game to clean up the code a little
 function factory_playerclass(game, config) {
-    function Player(sid, name) {
+    function Player(sid, name, pid) {
         this.sid = sid; //Session id
         this.pid = game.players.length;
         this.name = name;
@@ -34,6 +34,16 @@ function factory_playerclass(game, config) {
             this.clicker_data.last_click_time = Date.now();
             
             game.clickrate += delta_clicks;
+        },
+        generate_sync_data: function() {
+            return {
+                pid: this.pid,
+                name: this.name,
+                clicks: this.clicker_data.clicks_total
+            };
+        },
+        disconnect: function() {
+            game.players.splice(this.pid, 1);
         }
     };
     
@@ -67,6 +77,7 @@ Game.prototype = {
         this.clickrate = 0;
         
         for(var i = 0; i < this.players.length; i++) {
+            if(!this.players[i]) {continue;}
             this.clickrate += this.players[i].clicker_data.clickrate;
         }
         
@@ -92,10 +103,7 @@ Game.prototype = {
         //Build the player data
         var player_data = [];
         for(var i = 0; i < this.players.length; i++) {
-            player_data.push({
-                name: this.players[i].name,
-                clicks: this.players[i].clicker_data.clicks_total
-            });
+            player_data.push(this.players[i].generate_sync_data());
         }
         
         return {

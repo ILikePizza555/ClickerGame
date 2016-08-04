@@ -97,9 +97,54 @@ Clicker.prototype = {
     }
 };
 
-$(document).ready(function entry() {
-    var clicker = new Clicker();
+function Player(pid, name, clicks) {
+    this.pid = pid;
+    this.name = name;
+    this.clicks = clicks;
+}
+
+function PlayerList() {
+    this.players = [];
     
-    game.start();
+    //UI
+    this.label_player_count = $("#label-player-count");
+    
+    //Callbacks
+    game.ui_update_callbacks.push(this.update_ui.bind(this));
+    
+    socket.on("player join", this.player_join_handler.bind(this));
+    socket.on("player disconnect", this.player_disconnect_handler.bind(this));
+    socket.on("sync full", this.full_sync_handler.bind(this));
+}
+
+PlayerList.prototype = {
+    full_sync_handler: function(data) {
+        this.players.length = data.player_count;
+        for(var i = 0; i < data.players.length; i++) {
+            var player_data = data.players[i];
+            this.players[player_data.pid] = new Player(player_data.pid, player_data.name, player_data.clicks);
+        }
+    },
+    player_join_handler: function(player) {
+        this.players[player.pid] = new Player(player.pid, player.name, player.clicks);
+    },
+    player_disconnect_handler: function(pid) {
+        this.players.splice(pid, 1);
+    },
+    update_ui: function() {
+        this.label_player_count.text(this.players.length);
+    }
+}
+
+var clicker = null;
+var player_list = null;
+
+$(document).ready(function entry() {
+    clicker = new Clicker();
+    player_list = new PlayerList();
+    
     socket.emit("req sync full");
+    socket.once("sync full", function game_starter() {
+        game.start();
+    });
 });

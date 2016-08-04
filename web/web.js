@@ -19,7 +19,22 @@ function configWebRoutes(app, game_manager) {
     });
     
     app.get("/game/:id", function route_game(req, res) {
+        //Check to see if the player is logged in
+        if(!req.session.player) {
+            res.status(400).send('Please login first');
+            return;
+        }
+        
+        //Check for old session data, and delete it if it doesn't work
+        if(!game_manager.validate(req.session.player.game_id, req.sessionID)) {
+            delete req.session.player.game_id;
+            res.redirect(302, "/join_game");
+            return;
+        }
+        
+        //Check to see if the game exists
         if(!game_manager.exists(req.params.id)) {
+            delete req.session.player.game_id;
             res.status(400).send("Game does not exist!");
             return;
         }
@@ -37,22 +52,37 @@ function configApiRoutes(app, game_manager) {
         }
         
         //Check if already in a game
-        if(req.session.user && req.session.user.game_id >= 0) {
-            res.redirect(302, "/game/" + req.session.user.game_id);
+        if(req.session.player && req.session.player.game_id >= 0) {
+            res.redirect(302, "/game/" + req.session.player.game_id);
             return;
         }
-        
-        console.log("New user: " + req.body.username);
         
         var game_id = game_manager.join_game(req.sessionID, req.body.username);
         
         //Create a user object in the session
-        req.session.user = {
+        req.session.player = {
             name: req.body.username,
             game_id: game_id
         };
         
         res.redirect(302, "/game/" + game_id);
+    });
+    
+    app.get("/join_game", function route_new_game(req, res) {
+        //Check for username
+        if(!req.session.player || !req.session.player.name) {
+            res.status(400).send("No username found in session!");
+            return;
+        }
+        
+        //Check if already in a game
+        if(req.session.player.game_id >= 0) {
+            res.redirect(302, "/game/" + req.session.player.game_id);
+            return;
+        }
+        
+        req.session.player.game_id = game_manager.join_game(req.sessionID, req.session.player.name);
+        res.redirect(302, "/game/" + req.session.player.game_id);
     });
     
     app.get("/logout", function route_logout(req, res) {
