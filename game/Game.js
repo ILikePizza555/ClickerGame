@@ -1,54 +1,51 @@
-var game_socket = require("./GameSocket");
+const game_socket = require("./GameSocket");
+const randomstring = require("randomstring");
 
-//Factory function that returns a player class.
-//I use this instead of outright inner class in Game to clean up the code a little
-function factory_playerclass(game, config) {
-    function Player(sid, name, pid) {
-        this.sid = sid; //Session id
-        this.pid = game.players.length;
-        this.name = name;
-        
-        //Game data
-        this.clicker_data = {
-            clicks_total: 0,
-            clickrate: 0,
-            last_click_time: 0
-        };
-        
-        game.players.push(this);
-    }
-    
-    Player.prototype = {
-        update_clicker_data: function(delta_clicks) {
-            var delta = (Date.now() - this.clicker_data.last_click_time);
-            var clickrate = delta_clicks / delta * 1000;
-            
-            if(clickrate > config.max_clickrate) {
-                this.clicker_data.clickrate = config.max_clickrate;
-                this.clicker_data.clicks_total += config.max_clickrate * delta;
-            } else {
-                this.clicker_data.clicks_total += delta_clicks;
-                this.clicker_data.clickrate = clickrate;
-            }
-            
-            this.clicker_data.last_click_time = Date.now();
-            
-            game.clickrate += delta_clicks;
-        },
-        generate_sync_data: function() {
-            return {
-                pid: this.pid,
-                name: this.name,
-                clicks: this.clicker_data.clicks_total
-            };
-        },
-        disconnect: function() {
-            game.players.splice(this.pid, 1);
-        }
+function Player(sid, name, pid, config, game) {
+    this.sid = sid; //Session id
+    this.name = name;
+    this.pid = pid;
+    this.config = config;
+    this.game = game;
+
+    //Game data
+    this.clicker_data = {
+        clicks_total: 0,
+        clickrate: 0,
+        last_click_time: 0
     };
-    
-    return Player;
 }
+
+Player.prototype = {
+    update_clicker_data: function(delta_clicks) {
+        var delta = (Date.now() - this.clicker_data.last_click_time);
+        var clickrate = delta_clicks / delta * 1000;
+
+        if (clickrate > this.config.max_clickrate) {
+            this.clicker_data.clickrate = this.config.max_clickrate;
+            this.clicker_data.clicks_total += this.config.max_clickrate * delta;
+        }
+        else {
+            this.clicker_data.clicks_total += delta_clicks;
+            this.clicker_data.clickrate = clickrate;
+        }
+
+        this.clicker_data.last_click_time = Date.now();
+
+        this.game.clickrate += delta_clicks;
+    },
+    generate_sync_data: function() {
+        return {
+            pid: this.pid,
+            name: this.name,
+            clicks: this.clicker_data.clicks_total
+        };
+    },
+    disconnect: function() {
+        delete this.game.players[this.pid];
+    }
+};
+
 
 function Game(config, id, socket_server, session) {
     this.max_players = config.max_players;
@@ -60,8 +57,7 @@ function Game(config, id, socket_server, session) {
     this.clicks = 0;
     this.clickrate = 0;
     
-    this.Player = factory_playerclass(this, config);
-    this.players = [];
+    this.players = {};
     
     //Configure socket
     game_socket(socket_server, this, session);
@@ -71,14 +67,19 @@ function Game(config, id, socket_server, session) {
 
 Game.prototype = {
     isFull: function() {
-        return this.players.length >= this.max_players;
+        return Object.keys(this.players).length >= this.max_players;
+    },
+    create_player: function(sid, name, config) {
+        var pid = randomstring.generate({length: 6, charset: "hex", capitalization: "lowercase"});
+        this.players[pid] = new Player(sid, name, pid, config, this);
     },
     update_clicker_data: function() {
         this.clickrate = 0;
         
-        for(var i = 0; i < this.players.length; i++) {
-            if(!this.players[i]) {continue;}
-            this.clickrate += this.players[i].clicker_data.clickrate;
+        for(var pid in this.players) {
+            if(!this.players.hasOwnProperty(pid)) { continue; }
+            
+            this.clickrate += this.players[pid].clicker_data.clickrate;
         }
         
         this.clicks += this.clickrate * this.update_rate / 1000;
@@ -92,22 +93,26 @@ Game.prototype = {
         return this.players[pid];
     },
     getPlayerBySID: function(sid) {
-        var len = this.players.length;
-        
-        for (var i = 0; i < len; i++) {
-            if(this.players[i].sid === sid) {return this.players[i];}
+        for (var pid in this.players) {
+            if(!this.players.hasOwnProperty(pid)) { continue; }
+            
+            if(this.players[pid].sid === sid) { return this.players[pid]; }
         }
-        return null;
+        
+        return undefined;
     },
     generate_sync_data: function() {
         //Build the player data
         var player_data = [];
-        for(var i = 0; i < this.players.length; i++) {
-            player_data.push(this.players[i].generate_sync_data());
+        
+        for (var pid in this.players) {
+            if(!this.players.hasOwnProperty(pid)) { continue; }
+            
+            player_data.push(this.players[pid].generate_sync_data());
         }
         
         return {
-            player_count: this.players.length,
+            player_count:Object.keys(this.players).length,
             players: player_data,
             clicks: this.clicks,
             clickrate: this.clickrate

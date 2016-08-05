@@ -20,15 +20,8 @@ function configWebRoutes(app, game_manager) {
     
     app.get("/game/:id", function route_game(req, res) {
         //Check to see if the player is logged in
-        if(!req.session.player) {
+        if(!req.session.player || !(req.session.player.game_id >= 0) || !req.session.player.name) {
             res.status(400).send('Please login first');
-            return;
-        }
-        
-        //Check for old session data, and delete it if it doesn't work
-        if(!game_manager.validate(req.session.player.game_id, req.sessionID)) {
-            delete req.session.player.game_id;
-            res.redirect(302, "/join_game");
             return;
         }
         
@@ -36,6 +29,13 @@ function configWebRoutes(app, game_manager) {
         if(!game_manager.exists(req.params.id)) {
             delete req.session.player.game_id;
             res.status(400).send("Game does not exist!");
+            return;
+        }
+        
+        //Check to see if the player is allowed in the game
+        if(!game_manager.validate(req.session.player.game_id, req.sessionID)) {
+            delete req.session.player.game_id;
+            res.redirect(302, "/join_game");
             return;
         }
         
@@ -53,8 +53,13 @@ function configApiRoutes(app, game_manager) {
         
         //Check if already in a game
         if(req.session.player && req.session.player.game_id >= 0) {
-            res.redirect(302, "/game/" + req.session.player.game_id);
-            return;
+            //Check to see if the game exists
+            if(game_manager.exists(req.session.player.game_id)) {
+                res.redirect(302, "/game/" + req.session.player.game_id);
+                return;
+            }
+            
+            //Game does not exist, continue with request
         }
         
         var game_id = game_manager.join_game(req.sessionID, req.body.username);
