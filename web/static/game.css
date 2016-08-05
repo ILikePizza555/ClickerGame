@@ -44,3 +44,21 @@
 #player-box h2 {
     margin: 0px 0px 12px 0px;
 }
+
+#player-box ul {
+    list-style: none;
+    text-align: left;
+    padding: 0px;
+}
+
+#player-box ul > li:nth-child(2) {
+    background-color: #dfdfdf;
+}
+
+#player-box li {
+    padding: 8px;
+}
+
+.player-name {
+    font-weight: bold;
+}

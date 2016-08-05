@@ -42,6 +42,6 @@ module.exports = function configSocket(socket_server, game, session) {
         socket.on("disconnect", function disconnect_handler() {
             socket.player.disconnect();
             socket.broadcast.emit("player disconnect", socket.player.pid);
-        })
+        });
     });
 };

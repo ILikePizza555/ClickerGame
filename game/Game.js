@@ -31,8 +31,8 @@ Player.prototype = {
         }
 
         this.clicker_data.last_click_time = Date.now();
-
-        this.game.clickrate += delta_clicks;
+        
+        this.game.clicks += delta_clicks;
     },
     generate_sync_data: function() {
         return {
@@ -51,7 +51,7 @@ function Game(config, id, socket_server, session) {
     this.max_players = config.max_players;
     this.id = id;
     this.socket_server = socket_server;
-    this.update_rate = config.update_rate;
+    this.click_update_rate = config.click_update_rate;
     
     //Game data
     this.clicks = 0;
@@ -62,7 +62,10 @@ function Game(config, id, socket_server, session) {
     //Configure socket
     game_socket(socket_server, this, session);
     
-    setInterval(this.update.bind(this), config.update_rate);
+    setInterval(this.update.bind(this), config.click_update_rate);
+    setInterval(function full_sync() {
+        socket_server.emit("sync full", this.generate_sync_data());
+    }.bind(this), config.full_update_rate);
 }
 
 Game.prototype = {
@@ -74,6 +77,7 @@ Game.prototype = {
         this.players[pid] = new Player(sid, name, pid, config, this);
     },
     update_clicker_data: function() {
+        //Calculate clickrate to be used in client side interpolation
         this.clickrate = 0;
         
         for(var pid in this.players) {
@@ -81,8 +85,6 @@ Game.prototype = {
             
             this.clickrate += this.players[pid].clicker_data.clickrate;
         }
-        
-        this.clicks += this.clickrate * this.update_rate / 1000;
     },
     update: function() {
         this.update_clicker_data();
@@ -101,8 +103,7 @@ Game.prototype = {
         
         return undefined;
     },
-    generate_sync_data: function() {
-        //Build the player data
+    generate_player_sync_data: function() {
         var player_data = [];
         
         for (var pid in this.players) {
@@ -110,6 +111,12 @@ Game.prototype = {
             
             player_data.push(this.players[pid].generate_sync_data());
         }
+        
+        return player_data;
+    },
+    generate_sync_data: function() {
+        //Build the player data
+        var player_data = this.generate_player_sync_data();
         
         return {
             player_count:Object.keys(this.players).length,

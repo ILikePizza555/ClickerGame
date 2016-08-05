@@ -8,6 +8,14 @@ Array.prototype.last = function() {
 	return this[this.length - 1];
 };
 
+Object.prototype.count = function() {
+	var count = 0;
+	for (var prop in this) {
+		if(this.hasOwnProperty(prop)) {count++;}
+	}
+	return count;
+};
+
 Math.roundTo = function(number, digits) {
 	return parseFloat(number.toFixed(digits));
 };
@@ -104,7 +112,7 @@ function Player(pid, name, clicks) {
 }
 
 function PlayerList() {
-	this.players = [];
+	this.players = {};
 	this.player_list_changed = false;
 	
 	//UI
@@ -117,12 +125,20 @@ function PlayerList() {
 	socket.on("player join", this.player_join_handler.bind(this));
 	socket.on("player disconnect", this.player_disconnect_handler.bind(this));
 	socket.on("sync full", this.full_sync_handler.bind(this));
+	socket.on("sync player", this.player_sync_handler.bind(this));
 }
 
 PlayerList.prototype = {
 	full_sync_handler: function(data) {
 		for(var i = 0; i < data.players.length; i++) {
 			var player_data = data.players[i];
+			this.players[player_data.pid] = new Player(player_data.pid, player_data.name, player_data.clicks);
+			this.player_list_changed = true;
+		}
+	},
+	player_sync_handler: function(players) {
+		for(var i = 0; i < players.length; i++) {
+			var player_data = players[i];
 			this.players[player_data.pid] = new Player(player_data.pid, player_data.name, player_data.clicks);
 			this.player_list_changed = true;
 		}
@@ -136,7 +152,7 @@ PlayerList.prototype = {
 		this.player_list_changed = true;
 	},
 	update_ui: function() {
-		this.label_player_count.text(this.players.length);
+		this.label_player_count.text(this.players.count());
 		
 		if(this.player_list_changed) {
 			this.list_players.empty();
@@ -145,11 +161,10 @@ PlayerList.prototype = {
 				if(!this.players.hasOwnProperty(pid)) { continue; }
 				
 				var player = this.players[pid];
-				var html = $("<span>").addClass("name").css("color", player.pid).text(player.name)
-				.after(" - ")
-				.after($("<span>").addClass("clicks").text(player.clicks));
+				var player_name = "<span class='player-name' style='color: #" + player.pid + ";'>" + player.name + "</span>";
+				var player_clicks = "<span class='player-clicks'>" + player.clicks + "</span>";
 				
-				this.list_players.append($("<li>").append(html));
+				this.list_players.append($("<li>").addClass(player.pid).append(player_name+ " - " + player_clicks));
 			}
 		}
 		

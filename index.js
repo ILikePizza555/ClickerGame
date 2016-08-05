@@ -23,7 +23,8 @@ var config = {
     game: {
         max_players: 1000,
         max_delta_clicks: 30,
-        update_rate: 3000
+        click_update_rate: 3000,
+        full_update_rate: 5000,
     }
 };
 
